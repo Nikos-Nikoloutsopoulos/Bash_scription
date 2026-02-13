@@ -1,0 +1,6 @@
+ubuntu1:ansible
+ubuntu2:ansible
+ubuntu3:ansible
+centos1:ansible
+centos2:ansible
+centos3:ansible
