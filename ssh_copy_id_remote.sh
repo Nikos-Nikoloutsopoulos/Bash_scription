@@ -77,13 +77,13 @@ do
       if ping -c 1 $host &> /dev/null
       then
         echo "#################################"
-        echo "Copy public on the remote server $host"
+        echo "Copy public key on the remote server $host"
         echo "#################################"
 # 4. Key Transfer        
         if sshpass -e ssh-copy-id -i $KEY_PATH.pub -o StrictHostKeyChecking=no $USER@$host
         then
           echo "#################################"
-          echo "Key file  transfered in the $host server"
+          echo "Public Key is transfered in the $host server"
           echo "#################################"
         
         else
