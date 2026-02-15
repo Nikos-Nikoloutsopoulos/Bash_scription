@@ -1,30 +1,28 @@
 #!/bin/bash
-# This script reads hosts and users from a file with name remotehosts.txt
-# Afterwords generate key pairs localy
-# Copies the bublic key into remote servers
-# Connected on the remote servers and execute commads there
-
+echo "#################################"
+echo "Author Nikos Nikoloutsopoulos"
+echo "#################################"
 # Exit on error
-set -e
+# set -e
 
 sshpass -V &> /dev/null
 if [ $? -ne 0 ]
 then
    echo "sshpass is not installed. Installing sshpass..."
-    apt --help &> /dev/null
+    apt --help # &> /dev/null
     if [ $? -eq 0 ]
     then
       echo "#################################"
       echo "Installing sshpass on Ubuntu"
       echo "#################################"
-      apt update -y &> /dev/null
-      apt install -y sshpass &> /dev/null
+      echo "password" | sudo -S apt update -y #&> /dev/null
+      echo "password" | sudo -S apt install sshpass #&> /dev/null
     else
       echo "#################################"
       echo "Installing sshpass on CentOS"
       echo "#################################"
-      yum update -y &> /dev/null
-      yum install -y sshpass &> /dev/null
+      echo "password" | sudo -S yum update -y &> /dev/null
+      echo "password" | sudo -S yum install -y sshpass &> /dev/null
     fi  
 else
     echo "sshpass is already installed."
@@ -66,33 +64,47 @@ else
   echo "#################################"
 fi
 
-cat remotehosts.txt | while IFS=":" read -r host USER; 
+cat remotehosts.txt | while IFS=":" read -r host USER
 do
-      echo "#################################"
-      echo "Copy public on the remote server $host"
-      echo "#################################"
-      sshpass -e ssh-copy-id -i $KEY_PATH.pub -o StrictHostKeyChecking=no $USER@$host
-      if [ $? -eq 0 ]
+      # ping -c 1 $host &> /dev/null
+      # echo "Ping executed on $host"
+      # sleep 2
+      # if [ $? -eq 0 ]
+     sleep 1
+# 1. Connectivity Check
+      if ping -c 1 $host &> /dev/null
       then
         echo "#################################"
-        echo "Key file  transfered in the $host server"
+        echo "Copy public on the remote server $host"
         echo "#################################"
-      
-      else
-        echo "key fie transfer failed"
-      fi	    
-      echo "#################################"
-      echo "Connect on the remote server $host"
-      echo "#################################"
-      ssh -i $KEY_PATH $USER@$host <<EOF
-        REMOTE_SERVER_NAME=\$(hostname)
-        echo "I am running on \$REMOTE_SERVER_NAME"
-        ls -la .ssh/
-        cat /etc/os-release
-        sleep 1
-        exit
+# 2. Key Transfer        
+        if sshpass -e ssh-copy-id -i $KEY_PATH.pub -o StrictHostKeyChecking=no $USER@$host
+        then
+          echo "#################################"
+          echo "Key file  transfered in the $host server"
+          echo "#################################"
+        
+        else
+          echo "key fie transfer failed"
+        fi	    
+        echo "#################################"
+        echo "The user $USER is connected on the remote server $host"
+# 3. Remote Execution
+        echo "#################################"
+        ssh -i $KEY_PATH $USER@$host <<'EOF'
+          REMOTE_SERVER_NAME=\${hostname}
+          echo "I am running on \$REMOTE_SERVER_NAME"
+          ls -la .ssh/
+          cat /etc/os-release
+          sleep 1
+          exit
 EOF
-  
-done      
+      else
+        echo "#################################"
+        echo "Host $host is unreachable."
+        echo "#################################"
+      fi
+
+done  
 
 
