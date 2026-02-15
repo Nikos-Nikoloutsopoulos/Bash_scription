@@ -2,8 +2,12 @@
 echo "#################################"
 echo "Author Nikos Nikoloutsopoulos"
 echo "#################################"
-# Exit on error
-# set -e
+# This script reads hosts and users from a file with name remotehosts.txt
+# Afterwords generate key pairs localy
+# Copies the bublic key into remote servers
+# Connected on the remote servers and execute commads there
+
+# 1. Installing sspass
 
 sshpass -V &> /dev/null
 if [ $? -ne 0 ]
@@ -15,8 +19,8 @@ then
       echo "#################################"
       echo "Installing sshpass on Ubuntu"
       echo "#################################"
-      echo "password" | sudo -S apt update -y #&> /dev/null
-      echo "password" | sudo -S apt install sshpass #&> /dev/null
+      echo "password" | sudo -S apt update -y &> /dev/null
+      echo "password" | sudo -S apt install sshpass &> /dev/null
     else
       echo "#################################"
       echo "Installing sshpass on CentOS"
@@ -39,6 +43,8 @@ KEY_PATH="$KEY_DIR/$KEY_NAME"
 # Create .ssh directory if it doesn't exist
 mkdir -p "$KEY_DIR"
 chmod 700 "$KEY_DIR"
+
+# 2. Generate Key passwords
 
 # Check if key already exists
 if [ ! -f "$KEY_PATH" ]
@@ -66,18 +72,14 @@ fi
 
 cat remotehosts.txt | while IFS=":" read -r host USER
 do
-      # ping -c 1 $host &> /dev/null
-      # echo "Ping executed on $host"
-      # sleep 2
-      # if [ $? -eq 0 ]
-     sleep 1
-# 1. Connectivity Check
+
+# 3. Connectivity Check
       if ping -c 1 $host &> /dev/null
       then
         echo "#################################"
         echo "Copy public on the remote server $host"
         echo "#################################"
-# 2. Key Transfer        
+# 4. Key Transfer        
         if sshpass -e ssh-copy-id -i $KEY_PATH.pub -o StrictHostKeyChecking=no $USER@$host
         then
           echo "#################################"
@@ -89,7 +91,7 @@ do
         fi	    
         echo "#################################"
         echo "The user $USER is connected on the remote server $host"
-# 3. Remote Execution
+# 5. Remote Execution
         echo "#################################"
         ssh -i $KEY_PATH $USER@$host <<'EOF'
           REMOTE_SERVER_NAME=\${hostname}
